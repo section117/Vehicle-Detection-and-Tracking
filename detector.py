@@ -4,6 +4,7 @@ Implement and test car detection (localization)
 
 import numpy as np
 import tensorflow as tf
+tf = tf.compat.v1
 from PIL import Image
 import os
 from matplotlib import pyplot as plt
@@ -34,6 +35,7 @@ class CarDetector(object):
         
         # configuration for possible GPU use
         config = tf.ConfigProto()
+        #config = tf.compat.v1.ConfigProto()
         config.gpu_options.allow_growth = True
         # load frozen tensorflow detection model and initialize 
         # the tensorflow graph

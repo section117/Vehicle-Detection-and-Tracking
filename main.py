@@ -2,13 +2,15 @@
 # -*- coding: utf-8 -*-
 """@author: kyleguan
 """
+import time
 
 import numpy as np
 import matplotlib.pyplot as plt
 import glob
 from moviepy.editor import VideoFileClip
 from collections import deque
-from sklearn.utils.linear_assignment_ import linear_assignment
+from linear_assignment_ import linear_assignment
+#from scipy.optimize import linear_sum_assignment as linear_assignment
 
 import helpers
 import detector
@@ -26,7 +28,7 @@ tracker_list =[] # list for trackers
 # list for track ID
 track_id_list= deque(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'])
 
-debug = True
+debug = False
 
 def assign_detections_to_trackers(trackers, detections, iou_thrd = 0.3):
     '''
@@ -39,7 +41,7 @@ def assign_detections_to_trackers(trackers, detections, iou_thrd = 0.3):
         #trk = convert_to_cv2bbox(trk) 
         for d,det in enumerate(detections):
          #   det = convert_to_cv2bbox(det)
-            IOU_mat[t,d] = box_iou2(trk,det) 
+            IOU_mat[t,d] = helpers.box_iou2(trk, det)
     
     # Produces matches       
     # Solve the maximizing the sum of IOU assignment problem using the
@@ -137,7 +139,7 @@ def pipeline(img):
         for idx in unmatched_dets:
             z = z_box[idx]
             z = np.expand_dims(z, axis=0).T
-            tmp_trk = Tracker() # Create a new tracker
+            tmp_trk = tracker.Tracker() # Create a new tracker
             x = np.array([[z[0], 0, z[1], 0, z[2], 0, z[3], 0]]).T
             tmp_trk.x_state = x
             tmp_trk.predict_only()
