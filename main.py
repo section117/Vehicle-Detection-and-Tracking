@@ -173,7 +173,7 @@ def pipeline(img):
              if debug:
                  print('updated box: ', x_cv2)
                  print()
-             img= helpers.draw_box_label(img, x_cv2) # Draw the bounding boxes on the 
+             img= helpers.draw_box_label(img, x_cv2, show_label=False) # Draw the bounding boxes on the
                                              # images
     # Book keeping
     deleted_tracks = filter(lambda x: x.no_losses >max_age, tracker_list)  
@@ -206,8 +206,9 @@ if __name__ == "__main__":
     else: # test on a video file.
         
         start=time.time()
-        output = 'test_v7.mp4'
-        clip1 = VideoFileClip("project_video.mp4")#.subclip(4,49) # The first 8 seconds doesn't have any cars...
+        output = 'v4.mp4'
+        #clip1 = VideoFileClip("project_video.mp4")#.subclip(4,49) # The first 8 seconds doesn't have any cars...
+        clip1 = VideoFileClip("./test-videos/v4.mp4", audio=False)
         clip = clip1.fl_image(pipeline)
         clip.write_videofile(output, audio=False)
         end  = time.time()
