@@ -16,6 +16,11 @@ import helpers
 import detector
 import tracker
 
+import tensorflow as tf
+import cv2
+
+from warning import show_inference
+
 # Global variables to be used by funcitons of VideoFileClop
 frame_count = 0 # frame counter
 
@@ -29,6 +34,10 @@ tracker_list =[] # list for trackers
 track_id_list= deque(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'])
 
 debug = False
+
+model_dir = "./custom-data/ssdlite_mobilenet_v2_coco_2017"
+detection_model = tf.saved_model.load(str(model_dir))
+detection_model = detection_model.signatures['serving_default']
 
 def assign_detections_to_trackers(trackers, detections, iou_thrd = 0.3):
     '''
@@ -81,6 +90,12 @@ def assign_detections_to_trackers(trackers, detections, iou_thrd = 0.3):
 
 
 def pipeline(img):
+
+    global cap
+    (grabbed, frame) = cap.read()
+    frame = frame[:-150, :, :]
+    collision_warning = show_inference(detection_model, frame)
+
     '''
     Pipeline function for detection and tracking
     '''
@@ -90,37 +105,37 @@ def pipeline(img):
     global min_hits
     global track_id_list
     global debug
-    
+
     frame_count+=1
-    
+
     img_dim = (img.shape[1], img.shape[0])
     z_box = det.get_localization(img) # measurement
     if debug:
        print('Frame:', frame_count)
-       
+
     x_box =[]
-    if debug: 
+    if debug:
         for i in range(len(z_box)):
            img1= helpers.draw_box_label(img, z_box[i], box_color=(255, 0, 0))
            plt.imshow(img1)
         plt.show()
-    
+
     if len(tracker_list) > 0:
         for trk in tracker_list:
             x_box.append(trk.box)
-    
-    
+
+
     matched, unmatched_dets, unmatched_trks \
-    = assign_detections_to_trackers(x_box, z_box, iou_thrd = 0.3)  
+    = assign_detections_to_trackers(x_box, z_box, iou_thrd = 0.3)
     if debug:
          print('Detection: ', z_box)
          print('x_box: ', x_box)
          print('matched:', matched)
          print('unmatched_det:', unmatched_dets)
          print('unmatched_trks:', unmatched_trks)
-    
-         
-    # Deal with matched detections     
+
+
+    # Deal with matched detections
     if matched.size >0:
         for trk_idx, det_idx in matched:
             z = z_box[det_idx]
@@ -133,8 +148,8 @@ def pipeline(img):
             tmp_trk.box =xx
             tmp_trk.hits += 1
             tmp_trk.no_losses = 0
-    
-    # Deal with unmatched detections      
+
+    # Deal with unmatched detections
     if len(unmatched_dets)>0:
         for idx in unmatched_dets:
             z = z_box[idx]
@@ -150,8 +165,8 @@ def pipeline(img):
             tmp_trk.id = track_id_list.popleft() # assign an ID for the tracker
             tracker_list.append(tmp_trk)
             x_box.append(xx)
-    
-    # Deal with unmatched tracks       
+
+    # Deal with unmatched tracks
     if len(unmatched_trks)>0:
         for trk_idx in unmatched_trks:
             tmp_trk = tracker_list[trk_idx]
@@ -162,9 +177,9 @@ def pipeline(img):
             xx =[xx[0], xx[2], xx[4], xx[6]]
             tmp_trk.box =xx
             x_box[trk_idx] = xx
-                   
-       
-    # The list of tracks to be annotated  
+
+
+    # The list of tracks to be annotated
     good_tracker_list =[]
     for trk in tracker_list:
         if ((trk.hits >= min_hits) and (trk.no_losses <=max_age)):
@@ -175,21 +190,28 @@ def pipeline(img):
                  print()
              img= helpers.draw_box_label(img, x_cv2, show_label=False) # Draw the bounding boxes on the
                                              # images
+             if(collision_warning != False):
+                img= helpers.draw_collision_warning(img, collision_warning)
+
     # Book keeping
-    deleted_tracks = filter(lambda x: x.no_losses >max_age, tracker_list)  
-    
+    deleted_tracks = filter(lambda x: x.no_losses >max_age, tracker_list)
+
     for trk in deleted_tracks:
             track_id_list.append(trk.id)
-    
+
     tracker_list = [x for x in tracker_list if x.no_losses<=max_age]
-    
+
     if debug:
        print('Ending tracker_list: ',len(tracker_list))
        print('Ending good tracker_list: ',len(good_tracker_list))
-    
+
+
        
     return img
-    
+
+cap = cv2.VideoCapture('./test-videos/v7.mp4')
+cap.set(1, 0)
+
 if __name__ == "__main__":    
     
     det = detector.CarDetector()
@@ -199,16 +221,16 @@ if __name__ == "__main__":
         
         for i in range(len(images))[0:7]:
              image = images[i]
-             image_box = pipeline(image)   
+             image_box = pipeline(image)
              plt.imshow(image_box)
              plt.show()
            
     else: # test on a video file.
         
         start=time.time()
-        output = 'v4.mp4'
+        output = 'v7.mp4'
         #clip1 = VideoFileClip("project_video.mp4")#.subclip(4,49) # The first 8 seconds doesn't have any cars...
-        clip1 = VideoFileClip("./test-videos/v4.mp4", audio=False)
+        clip1 = VideoFileClip("./test-videos/v7.mp4", audio=False)
         clip = clip1.fl_image(pipeline)
         clip.write_videofile(output, audio=False)
         end  = time.time()
