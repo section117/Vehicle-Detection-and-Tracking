@@ -130,14 +130,14 @@ def draw_box_label(img, bbox_cv2, box_color=(0, 255, 255), show_label=True):
     
     return img
 
-def draw_collision_warning(img, warning_message):
+def draw_collision_warning(img, warning_message, warining_color):
     '''
         Helper funciton for drawing Collision Warning
         bbox_cv2 = [left, top, right, bottom]
         '''
     # box_color= (0, 255, 255)
     font = cv2.FONT_HERSHEY_SIMPLEX
-    font_size = 4
-    font_color = (255, 0, 0)
-    cv2.putText(img, warning_message, (50, 50), font, font_size, font_color, 1, cv2.LINE_AA)
+    font_size = 2
+    font_color = warining_color
+    cv2.putText(img, warning_message, (50, 300), font, font_size, font_color, 6, cv2.LINE_AA)
     return img

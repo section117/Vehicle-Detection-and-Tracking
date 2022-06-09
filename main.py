@@ -94,7 +94,7 @@ def pipeline(img):
     global cap
     (grabbed, frame) = cap.read()
     frame = frame[:-150, :, :]
-    collision_warning = show_inference(detection_model, frame)
+    collision_warning, warning_color = show_inference(detection_model, frame)
 
     '''
     Pipeline function for detection and tracking
@@ -191,7 +191,7 @@ def pipeline(img):
              img= helpers.draw_box_label(img, x_cv2, show_label=False) # Draw the bounding boxes on the
                                              # images
              if(collision_warning != False):
-                img= helpers.draw_collision_warning(img, collision_warning)
+                img= helpers.draw_collision_warning(img, collision_warning, warning_color)
 
     # Book keeping
     deleted_tracks = filter(lambda x: x.no_losses >max_age, tracker_list)
@@ -209,30 +209,20 @@ def pipeline(img):
        
     return img
 
-cap = cv2.VideoCapture('./test-videos/v7.mp4')
+cap = cv2.VideoCapture('./test-videos/cars_1.mp4')
 cap.set(1, 0)
 
 if __name__ == "__main__":    
     
     det = detector.CarDetector()
     
-    if debug: # test on a sequence of images
-        images = [plt.imread(file) for file in glob.glob('./test_images/*.jpg')]
         
-        for i in range(len(images))[0:7]:
-             image = images[i]
-             image_box = pipeline(image)
-             plt.imshow(image_box)
-             plt.show()
-           
-    else: # test on a video file.
+    start=time.time()
+    output = 'output.mp4'
+    #clip1 = VideoFileClip("project_video.mp4")#.subclip(4,49) # The first 8 seconds doesn't have any cars...
+    clip1 = VideoFileClip("./test-videos/cars_1.mp4", audio=False)
+    clip = clip1.fl_image(pipeline)
+    clip.write_videofile(output, audio=False)
+    end  = time.time()
         
-        start=time.time()
-        output = 'v7.mp4'
-        #clip1 = VideoFileClip("project_video.mp4")#.subclip(4,49) # The first 8 seconds doesn't have any cars...
-        clip1 = VideoFileClip("./test-videos/v7.mp4", audio=False)
-        clip = clip1.fl_image(pipeline)
-        clip.write_videofile(output, audio=False)
-        end  = time.time()
-        
-        print(round(end-start, 2), 'Seconds to finish')
+    print(round(end-start, 2), 'Seconds to finish')
