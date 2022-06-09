@@ -1,4 +1,5 @@
 import numpy as np
+from pyparsing import null_debug_action
 import tensorflow as tf
 
 # from utils import ops as utils_ops
@@ -45,13 +46,13 @@ def estimate_collide(output_dict, height, width, image_np):
         if max_curr_obj_area <= 100000:
             #cv2.putText(image_np, "YOU ARE GETTING CLOSER", (50, 50), font, 1.2, (255, 255, 0), 2, cv2.LINE_AA)
             print("YOU ARE GETTING CLOSER")
-            return "YOU ARE GETTING CLOSER"
+            return "YOU ARE GETTING CLOSER", (0, 35, 151)
         elif max_curr_obj_area > 100000:
             #cv2.putText(image_np, "DON'T COLLIDE !!!", (50, 50), font, 1.2, (255, 255, 0), 2, cv2.LINE_AA)
             print("DON'T COLLIDE !!!")
-            return "DON'T COLLIDE !!!"
+            return "DON'T COLLIDE !!!", (255, 0, 0)
 
-    return False
+    return False, (0,0,0)
 
 
 def run_inference_for_single_image(model, image):
@@ -86,8 +87,8 @@ def show_inference(model, image_path):
 
     # Actual detection.
     output_dict = run_inference_for_single_image(model, image_np)
-    collision_warning = estimate_collide(output_dict, height, width, image_np)
+    collision_warning, warning_color = estimate_collide(output_dict, height, width, image_np)
 
-    return collision_warning
+    return collision_warning, warning_color
 
 
